@@ -1,0 +1,20 @@
+cheever:NXjd2gdwh1ObA:501:501:J. Cheever Loophole:/home/cheever:/bin/bash
+george:vStAL.Bxpl7UA:502:502:George Schmidlap:/home/george:/bin/bash
+emmanuel:d3TZ6TExhRdPA:503:503:Emmanuel Ravelli:/home/emmanuel:/bin/bash
+frank:fIdEsMT2GeEjU:504:504:Frank Wagstaff:/home/frank:/bin/bash
+harry:cbhNpzdtoCojI:505:505:Harry Binelli:/home/harry:/bin/bash
+rosa:cnYOD3GTrFROQ:506:506:Rosa Castaldi:/home/rosa:/bin/bash
+rusty:FJzVutItwJoXg:507:507:Rusty Panello:/home/rusty:/bin/bash
+benjamin:gSM02HGsdJukU:508:508:Benjamin Franklin Linn:/home/benjamin:/bin/bash
+rufus:ZpQT6gVVYtia6:509:509:Rufus T. Firefly:/home/rufus:/bin/bash
+lionel:J/zTZGi5oD9GU:510:510:Lionel Q. Devereaux:/home/lionel:/bin/dash
+emily:gTfa9qDeYKf7w:511:511:Emily Upjohn:/home/emily:/bin/bash
+faker:QthJnmLKcRbf6:512:512:Faker Englund:/home/faker:/bin/bash
+hugo:jZ1.3UtsgAsQg:513:513:Hugo Z. Hackenbush:/home/hugo:/bin/zsh
+otis:qfC4Oaa0WM6EA:514:514:Otis B. Driftwood:/home/otis:/bin/bash
+arabella:qKSl/YqYdl1Mg:515:515:Arabella Rittenhouse:/home/arabella:/bin/zsh
+wolf:yzHIu0rfKQsro:516:516:Wolf J. Flywheel:/home/wolf:/bin/zsh
+joe:5BiM0r8dD9R8.:517:517:Joe Panello:/home/joe:/bin/ksh
+horatio:5n.IXQQCOH.16:518:518:Horatio Jamison:/home/horatio:/bin/bash
+quentin:D3ICN4dOzVHyY:519:519:S. Quentin Quale:/home/quentin:/bin/ksh
+quincy:50Q2vPWJw334M:520:520:Quincy Adams Wagstaff:/home/quincy:/bin/zsh
