@@ -1,4 +1,6 @@
+import javax.swing.plaf.synth.SynthScrollBarUI;
 import java.io.*;
+import java.sql.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -7,88 +9,96 @@ public class PasswordCrack {
     private static ArrayList<UserEntry> unsolvedUsers = new ArrayList();
     private static ArrayList<String> dictionary = new ArrayList<>();
     private static List<Function> namePermutations = new ArrayList<>();
+    private static List<Function> manglePermutations = new ArrayList<>();
+    private static List<Function> charPermutations = new ArrayList<>();
 
     public static void main(String[] args){
         System.out.println(jcrypt.crypt("Pk", "12345678"));
         loadDictionary(args[0]);
         loadUserInfo(args[1]);
         addNamePermutationFunctions();
+        addManglePermutationFunctions();
+        addCharPermutationFunctions();
         System.out.println("START LENGTH: " + unsolvedUsers.size());
 
         tryMostCommon();
         tryNameVariants();
-
-    }
-    private static void addNamePermutationFunctions() {
-        Function<String[], String> firstCapitalize = (String[] input) -> String.valueOf(input[0].charAt(0)).toUpperCase() + input[0].substring(1,input[0].length()).toLowerCase();
-        Function<String[], String> lastCapitalize = (String[] input) -> String.valueOf(input[1].charAt(0)).toUpperCase() + input[1].substring(1,input[1].length()).toLowerCase();
-        Function<String[], String> bothCapitalize = (String[] input) -> {
-            return (String.valueOf(input[0].charAt(0)).toUpperCase() + input[0].substring(1,input[0].length()))
-                    + (String.valueOf(input[1].charAt(0)).toUpperCase() + input[1].substring(1,input[1].length()));
-        };
-        Function<String[], String> firstToLower = (String[] input) -> input[0].toLowerCase();
-        Function<String[], String> firstToUpper = (String[] input) -> input[0].toUpperCase();
-        Function<String[], String> lastToLower = (String[] input) -> input[1].toLowerCase();
-        Function<String[], String> lastToUpper = (String[] input) -> input[1].toUpperCase();
-        Function<String[], String> bothLower = (String[] input) -> (input[0]+input[1]).toLowerCase();
-        Function<String[], String> bothUpper = (String[] input) -> (input[0]+input[1]).toUpperCase();
-        //"Every other"-kind of functions
-        Function<String, String> everyOtherLowerStart = (String plain) -> {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < plain.length(); i++){
-                String nextChar = String.valueOf(plain.charAt(i));
-                sb.append(i%2 == 0? nextChar :nextChar.toUpperCase());
-            }
-            return sb.toString();
-        };
-        Function<String, String> everyOtherUpperStart = (String plain) -> {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < plain.length(); i++){
-                String nextChar = String.valueOf(plain.charAt(i));
-                sb.append(i%2 == 0? nextChar.toUpperCase() :nextChar);
-            }
-            return sb.toString();
-        };
-        Function<String[], String> firstEveryOtherLowerStart = (String[] input) -> everyOtherLowerStart.apply(firstToLower.apply(input));
-        Function<String[], String> firstEveryOtherUpperStart = (String[] input) -> everyOtherUpperStart.apply(firstToLower.apply(input));
-        Function<String[], String> lastEveryOtherLowerStart = (String[] input) -> everyOtherLowerStart.apply(lastToLower.apply(input));
-        Function<String[], String> lastEveryOtherUpperStart = (String[] input) -> everyOtherUpperStart.apply(lastToUpper.apply(input));
-        Function<String[], String> bothEveryOtherLowerStart = (String[] input) -> everyOtherLowerStart.apply(bothLower.apply(input));
-        Function<String[], String> bothEveryOtherUpperStart = (String[] input) -> everyOtherUpperStart.apply(bothLower.apply(input));
-
-        namePermutations.add(firstCapitalize);
-        namePermutations.add(lastCapitalize);
-        namePermutations.add(bothCapitalize);
-        namePermutations.add(firstToLower);
-        namePermutations.add(firstToUpper);
-        namePermutations.add(lastToLower);
-        namePermutations.add(lastToUpper);
-        namePermutations.add(bothLower);
-        namePermutations.add(bothUpper);
-        namePermutations.add(firstEveryOtherLowerStart);
-        namePermutations.add(firstEveryOtherUpperStart);
-        namePermutations.add(lastEveryOtherLowerStart);
-        namePermutations.add(lastEveryOtherUpperStart);
-        namePermutations.add(bothEveryOtherLowerStart);
-        namePermutations.add(bothEveryOtherUpperStart);
+        tryDictionaryVariants();
+        System.out.println("FINAL LENGTH: " + unsolvedUsers.size());
     }
 
-    private static void tryNameVariants() {
-        for (int i = 0; i < unsolvedUsers.size(); i++){
-            UserEntry user = unsolvedUsers.get(i);
-            String[] userName = new String[]{user.firstName, user.surName};
-            int finalI = i;
-            for (Function func : namePermutations) {
-                String namePermutation = (String) func.apply(userName);
-                System.out.println(namePermutation);
-                String crypto = jcrypt.crypt(user.salt, namePermutation);
-                if (crypto.equals(user.password)) {
-                    System.out.println("'" + namePermutation + "' is pass for " + user.firstName + " " + user.surName);
-                    unsolvedUsers.remove(finalI);
-                    break;
+    private static void tryDictionaryVariants() {
+        for (int i = 0; i < dictionary.size(); i++){
+            for (Function func : manglePermutations) {
+                String wordMangle = (String) func.apply(dictionary.get(i));
+                for (int j = 0; j < unsolvedUsers.size(); j++){
+                    UserEntry user = unsolvedUsers.get(j);
+                    String crypto = jcrypt.crypt(user.salt, wordMangle);
+                    if (crypto.equals(user.password)) {
+                        System.out.println("'" + wordMangle + "' is pass for " + user.firstName + " " + user.surName);
+                        unsolvedUsers.remove(j);
+                    }
                 }
             }
         }
+    }
+
+    private static void tryNameVariants() {
+        boolean userIsSolved;
+        for (int i = 0; i < unsolvedUsers.size(); i++){
+            userIsSolved = false;
+            UserEntry user = unsolvedUsers.get(i);
+            ArrayList<String> userNamePermutations = new ArrayList();
+            ArrayList<String> userManglePermutations = new ArrayList();
+            String[] userName = new String[]{user.firstName, user.surName};
+            int finalUserRef = i;
+            for (Function func : namePermutations) {
+                String namePermutation = (String) func.apply(userName);
+                userNamePermutations.add(namePermutation);
+                String crypto = jcrypt.crypt(user.salt, namePermutation);
+                if (crypto.equals(user.password)) {
+                    System.out.println("'" + namePermutation + "' is pass for " + user.firstName + " " + user.surName);
+                    unsolvedUsers.remove(finalUserRef);
+                    userIsSolved = true;
+                    break;
+                }
+            }
+            if (!userIsSolved){
+                for (Object usersPermutation : userNamePermutations) {
+                    String namePermutation = (String) usersPermutation;
+                    for (Function mangle : manglePermutations) {
+                        if (!userIsSolved){
+                            String manglePermutation = (String) mangle.apply(namePermutation);
+                            userManglePermutations.add(manglePermutation);
+                            String crypto = jcrypt.crypt(user.salt, manglePermutation);
+                            if (crypto.equals(user.password)) {
+                                System.out.println("'" + manglePermutation + "' is pass for " + user.firstName + " " + user.surName);
+                                unsolvedUsers.remove(finalUserRef);
+                                userIsSolved = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (!userIsSolved){
+                for (Function mangle : charPermutations) {
+                    for (int asci = 48; asci < 123; asci++){
+                        for (Object usersPermutation : userManglePermutations){
+                            String mangleCharPermutations = (String) mangle.apply(new String[]{(String)usersPermutation, String.valueOf((char)asci)});
+                            String crypto = jcrypt.crypt(user.salt, mangleCharPermutations);
+                            if (crypto.equals(user.password)) {
+                                System.out.println("'" + mangleCharPermutations + "' is pass for " + user.firstName + " " + user.surName);
+                                unsolvedUsers.remove(finalUserRef);
+                                userIsSolved = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        System.out.println("Pure name variants are done. Left: " + unsolvedUsers.size());
     }
 
     private static void tryMostCommon() {
@@ -104,6 +114,86 @@ public class PasswordCrack {
             }
         }
         System.out.println("MOST COMMON DONE. Left: " + unsolvedUsers.size());
+    }
+
+    private static void addManglePermutationFunctions() {
+        Function<String, String> upperCase = (String input) -> input.toUpperCase();
+        Function<String, String> lowerCase = (String input) -> input.toLowerCase();
+        Function<String, String> capitalize = (String input) -> String.valueOf(input.charAt(0)).toUpperCase() + input.substring(1,input.length()).toLowerCase();
+        Function<String, String> nCapitalize = (String input) -> String.valueOf(input.charAt(0)).toLowerCase() + input.substring(1,input.length()).toUpperCase();
+        Function<String, String> toggleCaseUpperStart = (String input) -> {
+            String[] stringArr = input.split("");
+            StringBuilder sb = new StringBuilder();
+            for(int i = 0; i < stringArr.length; i++){
+                sb.append(i%2==0 ? stringArr[i].toUpperCase():stringArr[i].toLowerCase());
+            }
+            return sb.toString();
+        };
+        Function<String, String> toggleCaseLowerStart = (String input) -> {
+            String[] stringArr = input.split("");
+            StringBuilder sb = new StringBuilder();
+            for(int i = 0; i < stringArr.length; i++){
+                sb.append(i%2==0 ? stringArr[i].toLowerCase():stringArr[i].toUpperCase());
+            }
+            return sb.toString();
+        };
+        Function<String, String> removeFirst = (String input) -> input.substring(1,input.length());
+        Function<String, String> removeLast = (String input) -> input.substring(0,input.length()-1);
+        Function<String, String> reverse = (String input) -> {
+            char[] charArr = input.toCharArray();
+            StringBuilder sb = new StringBuilder();
+            for (int i = charArr.length-1; i>=0; i--){
+                sb.append(charArr[i]);
+            }
+            return sb.toString();
+        };
+        Function<String, String> duplicate = (String input) -> input+input;
+
+        manglePermutations.add(upperCase);
+        manglePermutations.add(lowerCase);
+        manglePermutations.add(capitalize);
+        manglePermutations.add(nCapitalize);
+        manglePermutations.add(toggleCaseUpperStart);
+        manglePermutations.add(toggleCaseLowerStart);
+        manglePermutations.add(removeFirst);
+        manglePermutations.add(removeLast);
+        manglePermutations.add(reverse);
+        manglePermutations.add(duplicate);
+
+    }
+
+    private static void addNamePermutationFunctions() {
+        Function<String[], String> firstOnly = (String[] input) -> input[0].toLowerCase();
+        Function<String[], String> lastOnly = (String[] input) -> input[1].toLowerCase();
+        Function<String[], String> bothOnly = (String[] input) -> input[0].toLowerCase() + input[1].toUpperCase();
+        Function<String[], String> bothCapitalize = (String[] input) -> (String.valueOf(input[0].charAt(0)).toUpperCase() + input[0].substring(1,input[0].length()))
+                + (String.valueOf(input[1].charAt(0)).toUpperCase() + input[1].substring(1,input[1].length()));
+
+        Function<String, String> reverse = (String input) -> {
+            char[] charArr = input.toCharArray();
+            StringBuilder sb = new StringBuilder();
+            for (int i = charArr.length-1; i>=0; i--){
+                sb.append(charArr[i]);
+            }
+            return sb.toString();
+        };
+        Function<String[], String> reflect = (String[] input) -> firstOnly.apply(input) + reverse.apply(lastOnly.apply(input));
+
+        namePermutations.add(firstOnly);
+        namePermutations.add(lastOnly);
+        namePermutations.add(lastOnly);
+
+        namePermutations.add(bothCapitalize);
+        namePermutations.add(bothOnly);
+
+        namePermutations.add(reflect);
+
+    }
+    private static void addCharPermutationFunctions() {
+        Function<String[], String> appendChar = (String[] input) -> input[0] + input[1];
+        Function<String[], String> prependChar = (String[] input) -> input[1] + input[0];
+        charPermutations.add(appendChar);
+        charPermutations.add(prependChar);
     }
 
     private static void loadUserInfo(String pswdFileName){
@@ -147,21 +237,10 @@ public class PasswordCrack {
             this.hash = password.substring(2, password.length());
             String[] parts = fullName.split(" ");
             for (String part : parts) {
-                if (this.firstName == null) {
-                    this.firstName = part;
-                    continue;
-                }
-                if (this.firstName.contains(".")) {
-                    this.firstName = part;
-                    continue;
-                }
-                if (this.surName == null) {
-                    this.surName = part;
-                    continue;
-                }
-                if (this.surName.contains(".")) {
-                    this.surName = part;
-                }
+                if (this.firstName == null) { this.firstName = part; continue; }
+                if (this.firstName.contains(".")) { this.firstName = part; continue; }
+                if (this.surName == null) { this.surName = part; continue; }
+                if (this.surName.contains(".")) { this.surName = part; }
             }
         }
     }
