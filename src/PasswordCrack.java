@@ -21,7 +21,7 @@ public class PasswordCrack {
         tryMostCommon();
         tryNameVariants();
         tryDictionaryVariants();
-        System.out.println("FINAL LENGTH: " + unsolvedUsers.size());
+        System.out.println("Passwords left un-cracked: " + unsolvedUsers.size() + "/20");
     }
 
     private static void tryMostCommon() {
@@ -37,7 +37,6 @@ public class PasswordCrack {
                 }
             }
         }
-        System.out.println("'Most Common' Done. Left: " + unsolvedUsers.size());
     }
 
     private static void tryNameVariants() {
@@ -285,6 +284,7 @@ public class PasswordCrack {
     }
 
     private static void loadUserInfo(String pswdFileName){
+        if (pswdFileName == null || pswdFileName.equals("")) throw new IllegalArgumentException("Argument for Dictionary file is empty?");
         String basepath = new File("").getAbsolutePath();
         try {
             BufferedReader br = new BufferedReader(new FileReader(new File(basepath + "/src/" + pswdFileName)));
@@ -293,7 +293,10 @@ public class PasswordCrack {
                 String[] parts = st.split(":");
                 unsolvedUsers.add(new UserEntry(parts[1], parts[4]));
             }
-        } catch (FileNotFoundException e) {
+        }catch (IndexOutOfBoundsException e){
+            System.err.println("A line in the password file is not formatted correctly? Program gets 'Index out of bounds' after splitting on ':' accessing indexes.");
+        }
+        catch (FileNotFoundException e) {
             System.err.println("The file was not found. Make sure the file is in the same directory as PasswordCrack.java");
         } catch (IOException e) {
             e.printStackTrace();
@@ -301,6 +304,7 @@ public class PasswordCrack {
     }
 
     private static void loadDictionary(String dictionaryName) {
+        if (dictionaryName == null || dictionaryName.equals("")) throw new IllegalArgumentException("Argument for Dictionary file is empty?");
         String basepath = new File("").getAbsolutePath();
         try {
             BufferedReader br = new BufferedReader(new FileReader(new File(basepath + "/src/" + dictionaryName)));
